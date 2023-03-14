@@ -1,4 +1,4 @@
-import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
+import { faBug, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import "./App.css";
@@ -74,6 +74,14 @@ function App() {
         Add new person
         <FontAwesomeIcon className="ml-2" icon={faUserPlus} />
       </button>
+      <a
+        className="rounded-lg justify-self-end border border-black m-2 bg-gray-700 text-white hover:bg-gray-800 font-semibold p-2"
+        type="button"
+        href="https://github.com/fajtaiandris/debt-tracker/issues"
+      >
+        Backlog
+        <FontAwesomeIcon className="ml-2" icon={faBug} />
+      </a>
       {isLoading && <>Loading ... </>}
       {isError && <>Error ... </>}
       {!isLoading && !isError && !!debts && !!people && (

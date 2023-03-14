@@ -13,6 +13,24 @@ interface Point {
   person: Person;
 }
 
+function getPointOnLine(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  percent: number
+) {
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  const normalizedDx = dx / length;
+  const normalizedDy = dy / length;
+  const distanceAlongLine = length * percent;
+  const pointX = startX + normalizedDx * distanceAlongLine;
+  const pointY = startY + normalizedDy * distanceAlongLine;
+  return { x: pointX, y: pointY };
+}
+
 function getPeoplePoints(people: Person[]): Point[] {
   const n = people.length;
   const theta = (Math.PI * 2) / n;
@@ -58,22 +76,28 @@ export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
   return (
     <>
       <svg width="800" height="800">
-        {debts.map((debt, i) => (
-          <line
-            key={"line" + i}
-            x1={peoplePoints.find((e) => e.person.name === debt.of)?.x}
-            y1={peoplePoints.find((e) => e.person.name === debt.of)?.y}
-            x2={peoplePoints.find((e) => e.person.name === debt.to)?.x}
-            y2={peoplePoints.find((e) => e.person.name === debt.to)?.y}
-            stroke={
-              isDebtColored(debt)
-                ? peoplePoints.find((e) => e.person.name === debt.of)?.person
-                    .color
-                : "#d4d4d4"
-            }
-            strokeWidth={debt.amount / 1000 + 5}
-          />
-        ))}
+        {debts.map((debt, i) => {
+          const ofPoint = peoplePoints.find((e) => e.person.name === debt.of);
+          const toPoint = peoplePoints.find((e) => e.person.name === debt.to);
+          if (!ofPoint || !toPoint) {
+            return;
+          }
+          return (
+            <motion.line
+              key={"line" + i}
+              x1={ofPoint.x}
+              y1={ofPoint.y}
+              x2={toPoint.x}
+              y2={toPoint.y}
+              animate={
+                isDebtColored(debt)
+                  ? { stroke: ofPoint.person.color }
+                  : { stroke: "#d4d4d4" }
+              }
+              strokeWidth={debt.amount / 1000 + 5}
+            />
+          );
+        })}
 
         {peoplePoints.map((point, i) => (
           <g
@@ -110,6 +134,46 @@ export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
             />
           </g>
         ))}
+        {debts.map((debt, i) => {
+          const ofPoint = peoplePoints.find((e) => e.person.name === debt.of);
+          const toPoint = peoplePoints.find((e) => e.person.name === debt.to);
+          if (!ofPoint || !toPoint) {
+            return;
+          }
+          const { x, y } = getPointOnLine(
+            ofPoint.x,
+            ofPoint.y,
+            toPoint.x,
+            toPoint.y,
+            0.5
+          );
+          return (
+            <>
+              <motion.circle
+                cx={x}
+                cy={y}
+                r={debt.amount / 500 + 13}
+                animate={
+                  isDebtColored(debt)
+                    ? { scale: 1.1, fill: ofPoint.person.color }
+                    : { scale: 1, fill: "#d4d4d4" }
+                }
+                transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+              />
+              <motion.text
+                x={x}
+                y={y}
+                alignmentBaseline="middle"
+                textAnchor="middle"
+                animate={
+                  isDebtColored(debt) ? { fill: "white" } : { fill: "darkgray" }
+                }
+              >
+                {debt.amount}
+              </motion.text>
+            </>
+          );
+        })}
       </svg>
     </>
   );
