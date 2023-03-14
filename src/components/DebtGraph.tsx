@@ -28,14 +28,13 @@ function getPeoplePoints(people: Person[]): Point[] {
 interface Props {
   people: Person[];
   debts: Debt[];
-  onNewDebt: (debt: Debt) => void;
+  onPersonClick: (person: Person) => void;
 }
 
-export const DebtGraph: FC<Props> = ({ people, debts, onNewDebt }) => {
+export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
   const [highlightedPerson, setHighlightedPerson] = useState<Person | null>(
     null
   );
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
   const peoplePoints = getPeoplePoints(people);
   const highlightedDebts = debts.filter(
@@ -54,15 +53,6 @@ export const DebtGraph: FC<Props> = ({ people, debts, onNewDebt }) => {
 
   const isDebtColored = (debt: Debt) => {
     return !highlightedPerson || highlightedDebts.includes(debt);
-  };
-
-  const handleSelect = (person: Person) => {
-    if (!!selectedPerson) {
-      onNewDebt({ of: selectedPerson.name, to: person.name, amount: 500 });
-      setSelectedPerson(null);
-    } else {
-      setSelectedPerson(person);
-    }
   };
 
   return (
@@ -95,7 +85,7 @@ export const DebtGraph: FC<Props> = ({ people, debts, onNewDebt }) => {
               setHighlightedPerson(null);
             }}
             onClick={() => {
-              handleSelect(point.person);
+              onPersonClick(point.person);
             }}
             className="hover:cursor-pointer"
           >
@@ -104,9 +94,7 @@ export const DebtGraph: FC<Props> = ({ people, debts, onNewDebt }) => {
               cy={point.y}
               r="60"
               animate={
-                point.person === selectedPerson
-                  ? { scale: 1.3, fill: point.person.color }
-                  : isPersonColored(point.person)
+                isPersonColored(point.person)
                   ? { scale: 1.1, fill: point.person.color }
                   : { scale: 1, fill: "#d4d4d4" }
               }

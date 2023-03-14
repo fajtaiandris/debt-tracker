@@ -1,3 +1,6 @@
+import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useState } from "react";
 import "./App.css";
 import { DebtGraph } from "./components/DebtGraph";
 import { NewDebt } from "./components/NewDebt";
@@ -8,45 +11,6 @@ import useDebtsQuery from "./hooks/useDebtsQuery";
 import usePeopleQuery from "./hooks/usePeopleQuery";
 import { Debt } from "./interfaces/debt";
 import { Person } from "./interfaces/person";
-
-function loadDummyPeople(projectId: number): Person[] {
-  return [
-    {
-      name: "Andris",
-      color: "#4284f5",
-      photoUrl: "https://api.dicebear.com/5.x/lorelei/svg?seed=Andris",
-    },
-    {
-      name: "Szandi",
-      color: "#b342f5",
-      photoUrl: "https://api.dicebear.com/5.x/lorelei/svg?seed=Szandi",
-    },
-    {
-      name: "Gergo",
-      color: "#f5cb42",
-      photoUrl: "https://api.dicebear.com/5.x/lorelei/svg?seed=Gergo",
-    },
-    {
-      name: "Tomi",
-      color: "#42f56c",
-      photoUrl: "https://api.dicebear.com/5.x/lorelei/svg?seed=Tomi",
-    },
-    {
-      name: "Zoli",
-      color: "#f5427e",
-      photoUrl: "https://api.dicebear.com/5.x/lorelei/svg?seed=Zoli",
-    },
-  ];
-}
-
-function loadDummyDebts(projectId: number): Debt[] {
-  return [
-    { of: "Andris", to: "Szandi", amount: 1500 },
-    { of: "Andris", to: "Gergo", amount: 10000 },
-    { of: "Gergo", to: "Szandi", amount: 1500 },
-    { of: "Szandi", to: "Tomi", amount: 100 },
-  ];
-}
 
 function App() {
   const {
@@ -60,15 +24,39 @@ function App() {
     isError: isDebtsError,
   } = useDebtsQuery();
 
+  const [selectedOf, setSelectedOf] = useState<Person | null>(null);
+  const [selectedTo, setSelectedTo] = useState<Person | null>(null);
+  const [isNewPersonModalVisible, setIsNewPersonModalVisible] =
+    useState<boolean>(false);
+  const isNewDebtModalVisible = !!selectedOf && !!selectedTo;
+
   const addPersonMutation = useAddPersonMutation();
   const addDebtMutation = useAddDebtMutation();
 
   const onAddPerson = (person: Person) => {
     addPersonMutation.mutate(person);
+    setIsNewPersonModalVisible(false);
   };
 
-  const onAddDebt = async (debt: Debt) => {
-    debts && addDebtMutation.mutate({ debt, debts });
+  const onAddDebt = (debt: Debt) => {
+    !!debts && addDebtMutation.mutate({ debt, debts });
+    setSelectedOf(null);
+    setSelectedTo(null);
+  };
+
+  const handlePersonClick = async (person: Person) => {
+    if (!!selectedTo) {
+      return;
+    }
+    if (!!selectedOf) {
+      if (person === selectedOf) {
+        setSelectedOf(null);
+      } else {
+        setSelectedTo(person);
+      }
+    } else {
+      setSelectedOf(person);
+    }
   };
 
   const isLoading = isPeopleLoading || isDebtsLoading;
@@ -76,6 +64,16 @@ function App() {
 
   return (
     <div className="bg-gray-50 h-screen">
+      <button
+        className="rounded-lg justify-self-end border border-black m-2 bg-gray-700 text-white hover:bg-gray-800 font-semibold p-2"
+        type="button"
+        onClick={() => {
+          setIsNewPersonModalVisible(true);
+        }}
+      >
+        Add new person
+        <FontAwesomeIcon className="ml-2" icon={faUserPlus} />
+      </button>
       {isLoading && <>Loading ... </>}
       {isError && <>Error ... </>}
       {!isLoading && !isError && !!debts && !!people && (
@@ -83,10 +81,28 @@ function App() {
           <DebtGraph
             people={people}
             debts={debts}
-            onNewDebt={onAddDebt}
+            onPersonClick={handlePersonClick}
           ></DebtGraph>
-          <NewPerson onSave={onAddPerson}></NewPerson>
         </>
+      )}
+      {isNewPersonModalVisible && (
+        <NewPerson
+          onSave={onAddPerson}
+          onClose={() => {
+            setIsNewPersonModalVisible(false);
+          }}
+        ></NewPerson>
+      )}
+      {isNewDebtModalVisible && (
+        <NewDebt
+          of={selectedOf}
+          to={selectedTo}
+          onSave={onAddDebt}
+          onClose={() => {
+            setSelectedOf(null);
+            setSelectedTo(null);
+          }}
+        ></NewDebt>
       )}
     </div>
   );
