@@ -96,7 +96,7 @@ export function useAddDebtMutation() {
   );
 }
 
-function findCommonDebt(debts: Debt[], personX: string, personY: string): Debt | null {
+export function findCommonDebt(debts: Debt[], personX: string, personY: string): Debt | null {
   return debts.find((debt) => debt.of === personX && debt.to === personY)
     || debts.find((debt) => debt.to === personX && debt.of === personY)
     || null;

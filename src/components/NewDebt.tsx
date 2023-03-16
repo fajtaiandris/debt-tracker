@@ -17,6 +17,9 @@ export const NewDebt: FC<Props> = ({ of, to, onSave, onClose }) => {
   return (
     <Modal onClose={onClose}>
       <div className="w-48">
+        <div className="text-center mb-2">
+          {of.name} owes {to.name}
+        </div>
         <div className="grid grid-cols-2 mb-4 gap-2 justify-items-center">
           <img
             className="rounded-full p-2 border border-black"
@@ -44,7 +47,7 @@ export const NewDebt: FC<Props> = ({ of, to, onSave, onClose }) => {
               Ft
             </span>
             <button
-              className="rounded-lg border border-black ml-2 bg-pink-400 hover:bg-pink-500 font-bold py-2 px-4"
+              className="rounded-lg border border-black ml-2 bg-green-500 hover:bg-green-600 font-bold py-2 px-4"
               type="button"
               onClick={() => onSave({ of: of.name, to: to.name, amount })}
             >

@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { FC, useState } from "react";
+import { FC, useRef, useState } from "react";
+import { findCommonDebt } from "../hooks/useAddDebtMutation";
+import useMousePosition from "../hooks/useMousePosition";
 import { Debt } from "../interfaces/debt";
 import { Person } from "../interfaces/person";
 
@@ -13,21 +15,20 @@ interface Point {
   person: Person;
 }
 
-function getPointOnLine(
+function getPointOnLineByDistance(
   startX: number,
   startY: number,
   endX: number,
   endY: number,
-  percent: number
+  distance: number
 ) {
   const dx = endX - startX;
   const dy = endY - startY;
-  const length = Math.sqrt(dx * dx + dy * dy);
-  const normalizedDx = dx / length;
-  const normalizedDy = dy / length;
-  const distanceAlongLine = length * percent;
-  const pointX = startX + normalizedDx * distanceAlongLine;
-  const pointY = startY + normalizedDy * distanceAlongLine;
+  const lineLength = Math.sqrt(dx * dx + dy * dy);
+  const unitDx = dx / lineLength;
+  const unitDy = dy / lineLength;
+  const pointX = startX + unitDx * distance;
+  const pointY = startY + unitDy * distance;
   return { x: pointX, y: pointY };
 }
 
@@ -47,20 +48,33 @@ interface Props {
   people: Person[];
   debts: Debt[];
   onPersonClick: (person: Person) => void;
+  selectedPerson: Person | null;
 }
 
-export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
+export const DebtGraph: FC<Props> = ({
+  people,
+  debts,
+  onPersonClick,
+  selectedPerson,
+}) => {
   const [highlightedPerson, setHighlightedPerson] = useState<Person | null>(
     null
   );
+  const divRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const { xCord, yCord } = useMousePosition({ divRef });
 
   const peoplePoints = getPeoplePoints(people);
+  const selectedPersonPoint = peoplePoints.find(
+    (e) => e.person === selectedPerson
+  );
   const highlightedDebts = debts.filter(
     (debt) => debt.of === highlightedPerson?.name
   );
 
   const isPersonColored = (person: Person) => {
     return (
+      !!selectedPerson ||
       !highlightedPerson ||
       highlightedDebts.some(
         (debt) => debt.to === person.name || debt.of === person.name
@@ -70,34 +84,120 @@ export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
   };
 
   const isDebtColored = (debt: Debt) => {
-    return !highlightedPerson || highlightedDebts.includes(debt);
+    return (
+      !!selectedPerson || !highlightedPerson || highlightedDebts.includes(debt)
+    );
   };
 
   return (
-    <>
-      <svg width="800" height="800">
+    <div ref={divRef}>
+      <svg
+        ref={svgRef}
+        width="800"
+        height="800"
+        className="absolute top-0 left-0"
+      >
         {debts.map((debt, i) => {
           const ofPoint = peoplePoints.find((e) => e.person.name === debt.of);
           const toPoint = peoplePoints.find((e) => e.person.name === debt.to);
           if (!ofPoint || !toPoint) {
             return;
           }
+          const selectionCommonDebt =
+            !!highlightedPerson &&
+            !!selectedPerson &&
+            findCommonDebt(debts, highlightedPerson.name, selectedPerson.name);
+          const isSelectionANegativeOwe =
+            !!highlightedPerson &&
+            selectionCommonDebt === debt &&
+            selectionCommonDebt.of === highlightedPerson.name;
           return (
-            <motion.line
-              key={"line" + i}
-              x1={ofPoint.x}
-              y1={ofPoint.y}
-              x2={toPoint.x}
-              y2={toPoint.y}
-              animate={
-                isDebtColored(debt)
-                  ? { stroke: ofPoint.person.color }
-                  : { stroke: "#d4d4d4" }
-              }
-              strokeWidth={debt.amount / 1000 + 5}
-            />
+            <g key={"line" + i}>
+              <motion.line
+                x1={ofPoint.x}
+                y1={ofPoint.y}
+                x2={toPoint.x}
+                y2={toPoint.y}
+                stroke="black"
+                animate={{
+                  strokeWidth: isSelectionANegativeOwe ? 30 : 0,
+                  stroke: "black",
+                }}
+              />
+              <motion.line
+                x1={ofPoint.x}
+                y1={ofPoint.y}
+                x2={toPoint.x}
+                y2={toPoint.y}
+                animate={{
+                  stroke: toPoint.person.color,
+                  strokeWidth: isSelectionANegativeOwe ? 28 : 0,
+                }}
+              />
+              <motion.line
+                x1={ofPoint.x}
+                y1={ofPoint.y}
+                x2={toPoint.x}
+                y2={toPoint.y}
+                stroke="black"
+                animate={{
+                  strokeWidth:
+                    debt.of === selectedPerson?.name &&
+                    debt.to === highlightedPerson?.name
+                      ? 25
+                      : 17,
+                  stroke: "black",
+                }}
+              />
+              <motion.line
+                x1={ofPoint.x}
+                y1={ofPoint.y}
+                x2={toPoint.x}
+                y2={toPoint.y}
+                animate={{
+                  stroke: isDebtColored(debt)
+                    ? ofPoint.person.color
+                    : "#d4d4d4",
+                  strokeWidth:
+                    debt.of === selectedPerson?.name &&
+                    debt.to === highlightedPerson?.name
+                      ? 23
+                      : 15,
+                }}
+              />
+            </g>
           );
         })}
+
+        {selectedPersonPoint &&
+          !!selectedPerson &&
+          (!highlightedPerson ||
+            !findCommonDebt(
+              debts,
+              selectedPerson?.name,
+              highlightedPerson?.name
+            )) && (
+            <>
+              <motion.line
+                x1={selectedPersonPoint.x}
+                y1={selectedPersonPoint.y}
+                x2={xCord}
+                y2={yCord}
+                stroke="black"
+                strokeWidth={17}
+                strokeLinecap="round"
+              />
+              <line
+                x1={selectedPersonPoint.x}
+                y1={selectedPersonPoint.y}
+                x2={xCord}
+                y2={yCord}
+                stroke={selectedPersonPoint.person.color}
+                strokeWidth={15}
+                strokeLinecap="round"
+              />
+            </>
+          )}
 
         {peoplePoints.map((point, i) => (
           <g
@@ -118,11 +218,16 @@ export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
               cy={point.y}
               r="60"
               animate={
-                isPersonColored(point.person)
+                point.person === selectedPerson
+                  ? { scale: 1.3, fill: point.person.color }
+                  : point.person === highlightedPerson && !!selectedPerson
+                  ? { scale: 1.3, fill: point.person.color }
+                  : isPersonColored(point.person)
                   ? { scale: 1.1, fill: point.person.color }
                   : { scale: 1, fill: "#d4d4d4" }
               }
-              transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+              transition={{ duration: 0.3 }}
+              stroke="black"
             />
             <image
               href={point.person.photoUrl}
@@ -140,15 +245,15 @@ export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
           if (!ofPoint || !toPoint) {
             return;
           }
-          const { x, y } = getPointOnLine(
+          const { x, y } = getPointOnLineByDistance(
             ofPoint.x,
             ofPoint.y,
             toPoint.x,
             toPoint.y,
-            0.5
+            100
           );
           return (
-            <>
+            <g key={"debt" + i}>
               <motion.circle
                 cx={x}
                 cy={y}
@@ -158,7 +263,8 @@ export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
                     ? { scale: 1.1, fill: ofPoint.person.color }
                     : { scale: 1, fill: "#d4d4d4" }
                 }
-                transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.3 }}
+                stroke="black"
               />
               <motion.text
                 x={x}
@@ -171,10 +277,10 @@ export const DebtGraph: FC<Props> = ({ people, debts, onPersonClick }) => {
               >
                 {debt.amount}
               </motion.text>
-            </>
+            </g>
           );
         })}
       </svg>
-    </>
+    </div>
   );
 };

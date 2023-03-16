@@ -54,7 +54,7 @@ export const NewPerson: FC<Props> = ({ onSave, onClose }) => {
           </div>
           <div className="grid grid-cols-3 gap-2">
             <button
-              className="rounded-lg border border-black bg-pink-400 hover:bg-pink-500 font-bold py-2 px-4"
+              className="rounded-lg border border-black bg-blue-400 hover:bg-blue-500 font-bold py-2 px-4"
               type="button"
               onClick={() =>
                 setPerson({ ...person, photoUrl: randomPhotoUrl() })
@@ -63,14 +63,14 @@ export const NewPerson: FC<Props> = ({ onSave, onClose }) => {
               <FontAwesomeIcon icon={faWandMagicSparkles} />
             </button>
             <button
-              className="rounded-lg border border-black bg-pink-400 hover:bg-pink-500 font-bold py-2 px-4"
+              className="rounded-lg border border-black bg-blue-400 hover:bg-blue-500 font-bold py-2 px-4"
               type="button"
               onClick={() => setPerson({ ...person, color: randomHexColor() })}
             >
               <FontAwesomeIcon icon={faPalette} />
             </button>
             <button
-              className="rounded-lg border border-black bg-pink-500 hover:bg-pink-600 font-bold py-2 px-4"
+              className="rounded-lg border border-black bg-green-500 hover:bg-green-600 font-bold py-2 px-4"
               type="button"
               onClick={() => onSave(person)}
             >
