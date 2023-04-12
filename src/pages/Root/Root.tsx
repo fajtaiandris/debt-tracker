@@ -1,33 +1,26 @@
-import { faBug, faUserPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useRef, useState } from "react";
-import "./App.css";
-import { DebtGraph } from "./components/DebtGraph";
-import { NewDebt } from "./components/NewDebt";
-import { NewPerson } from "./components/NewPerson";
-import { useAddDebtMutation } from "./hooks/useAddDebtMutation";
-import { useAddPersonMutation } from "./hooks/useAddPersonMutation";
-import useDebtsQuery from "./hooks/useDebtsQuery";
-import usePeopleQuery from "./hooks/usePeopleQuery";
-import { Debt } from "./interfaces/debt";
-import { Person } from "./interfaces/person";
+import { faBug, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import React, { useState } from 'react';
 
-function App() {
-  const {
-    data: people,
-    isLoading: isPeopleLoading,
-    isError: isPeopleError,
-  } = usePeopleQuery();
-  const {
-    data: debts,
-    isLoading: isDebtsLoading,
-    isError: isDebtsError,
-  } = useDebtsQuery();
+import { useAddDebtMutation } from '@queries/useAddDebtMutation';
+import { useAddPersonMutation } from '@queries/useAddPersonMutation';
+import useDebtsQuery from '@queries/useDebtsQuery';
+import usePeopleQuery from '@queries/usePeopleQuery';
+
+import { Debt } from '@interfaces/debt';
+import { Person } from '@interfaces/person';
+
+import { DebtGraph } from './DebtGraph';
+import { NewDebt } from './NewDebt';
+import { NewPerson } from './NewPerson';
+
+export function Root() {
+  const { data: people, isLoading: isPeopleLoading, isError: isPeopleError } = usePeopleQuery();
+  const { data: debts, isLoading: isDebtsLoading, isError: isDebtsError } = useDebtsQuery();
 
   const [selectedOf, setSelectedOf] = useState<Person | null>(null);
   const [selectedTo, setSelectedTo] = useState<Person | null>(null);
-  const [isNewPersonModalVisible, setIsNewPersonModalVisible] =
-    useState<boolean>(false);
+  const [isNewPersonModalVisible, setIsNewPersonModalVisible] = useState<boolean>(false);
   const isNewDebtModalVisible = !!selectedOf && !!selectedTo;
 
   const addPersonMutation = useAddPersonMutation();
@@ -45,10 +38,10 @@ function App() {
   };
 
   const handlePersonClick = async (person: Person) => {
-    if (!!selectedTo) {
+    if (selectedTo) {
       return;
     }
-    if (!!selectedOf) {
+    if (selectedOf) {
       if (person === selectedOf) {
         setSelectedOf(null);
       } else {
@@ -63,7 +56,7 @@ function App() {
   const isError = isPeopleError || isDebtsError;
 
   return (
-    <div className="bg-gray-50 h-screen">
+    <div className="h-screen bg-gray-50">
       {isLoading && <>Loading ... </>}
       {isError && <>Error ... </>}
       {!isLoading && !isError && !!debts && !!people && (
@@ -97,7 +90,7 @@ function App() {
       )}
       <div className="absolute top-0 left-0">
         <button
-          className="rounded-lg justify-self-end border border-black m-2 bg-gray-700 text-white hover:bg-gray-800 font-semibold p-2"
+          className="m-2 justify-self-end rounded-lg border border-black bg-gray-700 p-2 font-semibold text-white hover:bg-gray-800"
           type="button"
           onClick={() => {
             setIsNewPersonModalVisible(true);
@@ -107,7 +100,7 @@ function App() {
           <FontAwesomeIcon className="ml-2" icon={faUserPlus} />
         </button>
         <a
-          className="rounded-lg justify-self-end border border-black m-2 bg-gray-700 text-white hover:bg-gray-800 font-semibold p-2"
+          className="m-2 justify-self-end rounded-lg border border-black bg-gray-700 p-2 font-semibold text-white hover:bg-gray-800"
           type="button"
           href="https://github.com/fajtaiandris/debt-tracker/issues"
         >
@@ -118,5 +111,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

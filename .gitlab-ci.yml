@@ -1,0 +1,13 @@
+stages:
+  - test
+
+test:
+  stage: test
+  image: node:18.15.0
+  script:
+    - npm ci
+    - npm run lint
+    - npm run test
+    - npm run build
+    - npm run build-storybook
+    - npx cowsay Looks moo to me!

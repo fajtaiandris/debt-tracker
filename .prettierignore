@@ -1,0 +1,4 @@
+node_modules/
+dist/
+storybook-static
+.storybook/preview-head.html

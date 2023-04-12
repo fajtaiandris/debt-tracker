@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "formulahendry.auto-rename-tag",
+    "rodrigovallades.es7-react-js-snippets",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss"
+  ]
+}

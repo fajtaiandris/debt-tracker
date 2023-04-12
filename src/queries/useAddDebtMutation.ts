@@ -1,10 +1,12 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Debt } from "../interfaces/debt";
-import useSupabase from "./useSupabase";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { Debt } from '@interfaces/debt';
+
+import useSupabase from '@hooks/useSupabase';
 
 export interface AddDebtMutationParams {
-  debt: Debt,
-  debts: Debt[]
+  debt: Debt;
+  debts: Debt[];
 }
 
 export function useAddDebtMutation() {
@@ -17,16 +19,12 @@ export function useAddDebtMutation() {
       if (!commonDebt) {
         return client
           .from('debt')
-          .insert([
-            params.debt
-          ])
+          .insert([params.debt])
           .throwOnError()
           .select<string, Debt>('*')
           .throwOnError()
           .single()
-          .then(
-            (result) => result.data
-          );
+          .then((result) => result.data);
       }
       if (commonDebt.of === params.debt.of) {
         return client
@@ -38,23 +36,19 @@ export function useAddDebtMutation() {
           .select<string, Debt>('*')
           .throwOnError()
           .single()
-          .then(
-            (result) => result.data
-          );
+          .then((result) => result.data);
       }
       if (commonDebt.amount > params.debt.amount) {
-         return client
+        return client
           .from('debt')
-          .update({ amount: commonDebt.amount - params.debt.amount})
+          .update({ amount: commonDebt.amount - params.debt.amount })
           .eq('of', commonDebt.of)
           .eq('to', commonDebt.to)
           .throwOnError()
           .select<string, Debt>('*')
           .throwOnError()
           .single()
-          .then(
-            (result) => result.data
-          );
+          .then((result) => result.data);
       }
       if (commonDebt.amount === params.debt.amount) {
         return client
@@ -66,9 +60,7 @@ export function useAddDebtMutation() {
           .select<string, Debt>('*')
           .throwOnError()
           .single()
-          .then(
-            (result) => result.data
-          );
+          .then((result) => result.data);
       }
       if (commonDebt.amount < params.debt.amount) {
         return client
@@ -76,7 +68,7 @@ export function useAddDebtMutation() {
           .update({
             to: params.debt.to,
             of: params.debt.of,
-            amount: params.debt.amount - commonDebt.amount
+            amount: params.debt.amount - commonDebt.amount,
           })
           .eq('of', commonDebt.of)
           .eq('to', commonDebt.to)
@@ -84,20 +76,21 @@ export function useAddDebtMutation() {
           .select<string, Debt>('*')
           .throwOnError()
           .single()
-          .then(
-            (result) => result.data
-          );
+          .then((result) => result.data);
       }
-    }, {
-      onSuccess: (data, variables) => {
+    },
+    {
+      onSuccess: () => {
         queryClient.invalidateQueries(['debts']);
-      }
-    }
+      },
+    },
   );
 }
 
 export function findCommonDebt(debts: Debt[], personX: string, personY: string): Debt | null {
-  return debts.find((debt) => debt.of === personX && debt.to === personY)
-    || debts.find((debt) => debt.to === personX && debt.of === personY)
-    || null;
+  return (
+    debts.find((debt) => debt.of === personX && debt.to === personY) ||
+    debts.find((debt) => debt.to === personX && debt.of === personY) ||
+    null
+  );
 }
