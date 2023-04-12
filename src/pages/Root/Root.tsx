@@ -3,11 +3,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useState } from 'react';
 
 import { useAddDebtMutation } from '@queries/useAddDebtMutation';
+import { useAddHistoryMutation } from '@queries/useAddHistoryMutation';
 import { useAddPersonMutation } from '@queries/useAddPersonMutation';
 import useDebtsQuery from '@queries/useDebtsQuery';
+import useHistoryQuery from '@queries/useHistoryQuery';
 import usePeopleQuery from '@queries/usePeopleQuery';
 
-import { Debt } from '@interfaces/debt';
+import { HistoryItem } from '@interfaces/history';
 import { Person } from '@interfaces/person';
 
 import { DebtGraph } from './DebtGraph';
@@ -17,22 +19,28 @@ import { NewPerson } from './NewPerson';
 export function Root() {
   const { data: people, isLoading: isPeopleLoading, isError: isPeopleError } = usePeopleQuery();
   const { data: debts, isLoading: isDebtsLoading, isError: isDebtsError } = useDebtsQuery();
+  const { data: history, isLoading: isHistoryLoading, isError: isHistoryError } = useHistoryQuery();
 
   const [selectedOf, setSelectedOf] = useState<Person | null>(null);
   const [selectedTo, setSelectedTo] = useState<Person | null>(null);
   const [isNewPersonModalVisible, setIsNewPersonModalVisible] = useState<boolean>(false);
-  const isNewDebtModalVisible = !!selectedOf && !!selectedTo;
+  const isLoading = isPeopleLoading || isDebtsLoading || isHistoryLoading;
+  const isError = isPeopleError || isDebtsError || isHistoryError;
+  const isNewDebtModalVisible = !!selectedOf && !!selectedTo && !!history;
 
   const addPersonMutation = useAddPersonMutation();
   const addDebtMutation = useAddDebtMutation();
+  const addHistoryMutation = useAddHistoryMutation();
 
   const onAddPerson = (person: Person) => {
     addPersonMutation.mutate(person);
     setIsNewPersonModalVisible(false);
   };
 
-  const onAddDebt = (debt: Debt) => {
-    !!debts && addDebtMutation.mutate({ debt, debts });
+  const onAddDebt = (historyItem: Omit<HistoryItem, 'created_at'>) => {
+    !!debts &&
+      addDebtMutation.mutate({ debt: { of: historyItem.of, to: historyItem.to, amount: historyItem.amount }, debts });
+    addHistoryMutation.mutate(historyItem);
     setSelectedOf(null);
     setSelectedTo(null);
   };
@@ -51,9 +59,6 @@ export function Root() {
       setSelectedOf(person);
     }
   };
-
-  const isLoading = isPeopleLoading || isDebtsLoading;
-  const isError = isPeopleError || isDebtsError;
 
   return (
     <div className="h-screen bg-gray-50">
@@ -81,6 +86,9 @@ export function Root() {
         <NewDebt
           of={selectedOf}
           to={selectedTo}
+          history={history?.filter((e) => {
+            return e.of === selectedOf.name && e.to === selectedTo.name;
+          })}
           onSave={onAddDebt}
           onClose={() => {
             setSelectedOf(null);
